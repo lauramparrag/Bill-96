@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill 96 — Lead Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f2; --surface: #fff; --border: #e8e4dc;
+    --text: #1a1814; --muted: #9a9488; --accent: #2d6a4f; --accent-light: #e8f5ee;
+    --accent3: #264653; --hot: #e63946; --hot-light: #fdecea;
+    --warm: #f4a261; --warm-light: #fef4e8; --cold: #adb5bd; --cold-light: #f4f5f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
+  .header { background: var(--accent3); padding: 24px 32px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  .header-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+  .header-title { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -.03em; }
+  .header-title span { color: #a8dadc; }
+  .header-sub { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 4px; }
+  .header-stats { display: flex; gap: 16px; }
+  .hstat { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 10px 16px; text-align: center; min-width: 80px; }
+  .hstat-num { font-size: 20px; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 3px; }
+  .hstat-label { font-size: 9px; font-weight: 500; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .1em; }
+  .body { display: flex; height: calc(100vh - 90px); overflow: hidden; }
+  .sidebar { width: 230px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 18px; }
+  .filter-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 6px; }
+  .fb { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 6px 9px; background: transparent; border: 1px solid transparent; border-radius: 6px; color: var(--muted); font-family: 'Poppins', sans-serif; font-size: 11.5px; cursor: pointer; text-align: left; transition: all .15s; margin-bottom: 2px; }
+  .fb:hover { background: var(--bg); color: var(--text); }
+  .fb.active { background: var(--accent-light); color: var(--accent); border-color: #b7e4c7; font-weight: 600; }
+  .fb .cnt { font-size: 10px; background: var(--bg); border-radius: 4px; padding: 1px 5px; color: var(--muted); }
+  .fb.active .cnt { background: #b7e4c7; color: var(--accent); }
+  .search-wrap { position: relative; }
+  .search-wrap input { width: 100%; padding: 7px 9px 7px 28px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; font-family: 'Poppins', sans-serif; font-size: 12px; color: var(--text); outline: none; transition: border-color .2s; }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--muted); pointer-events: none; }
+  .reset-btn { width: 100%; padding: 6px; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-family: 'Poppins', sans-serif; font-size: 11px; cursor: pointer; transition: all .15s; }
+  .reset-btn:hover { border-color: #e76f51; color: #e76f51; }
+  .main { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .rc { font-size: 12px; color: var(--muted); }
+  .rc strong { color: var(--text); }
+  .vbtns { display: flex; gap: 4px; }
+  .vb { padding: 5px 11px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-family: 'Poppins', sans-serif; font-size: 11px; color: var(--muted); cursor: pointer; transition: all .15s; }
+  .vb.active { background: var(--accent3); color: #fff; border-color: var(--accent3); }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 11px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 14px; cursor: pointer; transition: all .2s; }
+  .card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(45,106,79,.08); transform: translateY(-1px); }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+  .card-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .card-company { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+  .sb { flex-shrink: 0; font-size: 13px; font-weight: 800; width: 40px; height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+  .sh { background: var(--hot-light); color: var(--hot); }
+  .sw { background: var(--warm-light); color: #c1440e; }
+  .sc { background: var(--cold-light); color: var(--cold); }
+  .card-title { font-size: 11px; color: #555; margin-bottom: 9px; line-height: 1.4; font-weight: 500; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .tag { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
+  .ti { background: #e8f5ee; color: var(--accent); border: 1px solid #b7e4c7; }
+  .ts { background: #fdf0eb; color: #c1440e; border: 1px solid #f4c5b0; }
+  .tc { background: #eef2f7; color: var(--accent3); border: 1px solid #c5d3e0; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .detail-panel { width: 350px; flex-shrink: 0; background: var(--surface); border-left: 1px solid var(--border); overflow-y: auto; transition: width .25s; }
+  .detail-panel.hidden { width: 0; overflow: hidden; }
+  .di { padding: 22px; min-width: 350px; }
+  .dn { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 2px; }
+  .dt { font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .dsr { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .dsb { font-size: 26px; font-weight: 800; width: 58px; height: 58px; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
+  .dst { flex: 1; }
+  .dsl { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 3px; }
+  .dss { font-size: 12px; font-weight: 600; }
+  .th { color: var(--hot); } .tw { color: #c1440e; } .tco { color: var(--cold); }
+  .ds { margin-bottom: 16px; }
+  .dst2 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+  .dr { display: flex; gap: 8px; margin-bottom: 7px; align-items: flex-start; }
+  .dl { font-size: 11px; color: var(--muted); font-weight: 500; min-width: 80px; flex-shrink: 0; padding-top: 1px; }
+  .dv { font-size: 11px; color: var(--text); font-weight: 500; line-height: 1.4; }
+  .crec { background: var(--accent-light); border: 1px solid #b7e4c7; border-radius: 9px; padding: 12px; margin-bottom: 16px; }
+  .crect { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .crecv { font-size: 11px; color: #2d4a3a; line-height: 1.6; }
+  .cb { float: right; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 3px 9px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: 'Poppins', sans-serif; transition: all .15s; }
+  .cb:hover { border-color: #e76f51; color: #e76f51; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th { background: var(--surface); border-bottom: 2px solid var(--border); padding: 9px 11px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); white-space: nowrap; position: sticky; top: 0; }
+  tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; }
+  tbody tr:hover { background: var(--bg); }
+  tbody td { padding: 9px 11px; color: #555; vertical-align: middle; }
+  tbody td:first-child { color: var(--text); font-weight: 600; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="header-eyebrow">TransPerfect GlobalLink · Bill 96 Campaign</div>
+    <div class="header-title">Lead <span>Intelligence</span></div>
+    <div class="header-sub">Bill 96 Guide downloaders — enriched by industry · 1 hot · 8 warm · 78 cold</div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-num">1</div><div class="hstat-label">Hot (form fill)</div></div>
+    <div class="hstat"><div class="hstat-num">8</div><div class="hstat-label">Warm (75+)</div></div>
+    <div class="hstat"><div class="hstat-num">78</div><div class="hstat-label">Cold (&lt;75)</div></div>
+    <div class="hstat"><div class="hstat-num">23</div><div class="hstat-label">Industries</div></div>
+  </div>
+</div>
+<div class="body">
+  <div class="sidebar">
+    <div>
+      <div class="filter-title">Search</div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Name, company, title…" oninput="render()">
+      </div>
+    </div>
+    <div>
+      <div class="filter-title">Score tier</div>
+      <button class="fb active" data-f="tier" data-v="all" onclick="setFilter('tier','all',this)">All tiers <span class="cnt">87</span></button>
+      <button class="fb" data-f="tier" data-v="hot" onclick="setFilter('tier','hot',this)">🔴 Hot (form fill) <span class="cnt">1</span></button>
+      <button class="fb" data-f="tier" data-v="warm" onclick="setFilter('tier','warm',this)">🟡 Warm (75+) <span class="cnt">8</span></button>
+      <button class="fb" data-f="tier" data-v="cold" onclick="setFilter('tier','cold',this)">⚪ Cold (&lt;75) <span class="cnt">78</span></button>
+    </div>
+    <div>
+      <div class="filter-title">Industry</div>
+      <div id="ind-filters"></div>
+    </div>
+    <div>
+      <div class="filter-title">Seniority</div>
+      <button class="fb active" data-f="sen" data-v="all" onclick="setFilter('sen','all',this)">All <span class="cnt">87</span></button>
+      <button class="fb" data-f="sen" data-v="C-level" onclick="setFilter('sen','C-level',this)">C-Level <span class="cnt">2</span></button>
+      <button class="fb" data-f="sen" data-v="VP" onclick="setFilter('sen','VP',this)">VP <span class="cnt">9</span></button>
+      <button class="fb" data-f="sen" data-v="Director" onclick="setFilter('sen','Director',this)">Director <span class="cnt">9</span></button>
+      <button class="fb" data-f="sen" data-v="Manager" onclick="setFilter('sen','Manager',this)">Manager <span class="cnt">43</span></button>
+      <button class="fb" data-f="sen" data-v="Staff" onclick="setFilter('sen','Staff',this)">Staff <span class="cnt">24</span></button>
+    </div>
+    <div>
+      <div class="filter-title">Country</div>
+      <button class="fb active" data-f="cty" data-v="all" onclick="setFilter('cty','all',this)">All <span class="cnt">87</span></button>
+      <button class="fb" data-f="cty" data-v="Canada" onclick="setFilter('cty','Canada',this)">🇨🇦 Canada <span class="cnt">55</span></button>
+      <button class="fb" data-f="cty" data-v="United States" onclick="setFilter('cty','United States',this)">🇺🇸 United States <span class="cnt">30</span></button>
+      <button class="fb" data-f="cty" data-v="Other" onclick="setFilter('cty','Other',this)">Other <span class="cnt">2</span></button>
+    </div>
+    <button class="reset-btn" onclick="resetFilters()">↺ Reset filters</button>
+  </div>
+  <div class="main" id="mainContent">
+    <div class="toolbar">
+      <div class="rc">Showing <strong id="rc">87</strong> leads</div>
+      <div class="vbtns">
+        <button class="vb active" id="btnC" onclick="setView('cards')">Cards</button>
+        <button class="vb" id="btnT" onclick="setView('table')">Table</button>
+      </div>
+    </div>
+    <div id="cardGrid" class="card-grid"></div>
+    <div id="tableWrap" class="table-wrap" style="display:none"></div>
+  </div>
+  <div class="detail-panel hidden" id="dp"><div class="di" id="di"></div></div>
+</div>
+<script>
+const LEADS = [{"first": "Megan", "last": "Purdy", "email": "megan.purdy@vensure.ca", "company": "Vensure HR", "title": "Senior Marketing Manager", "dept": "", "country": "Canada", "score": 242, "seniority": "Manager", "industry": "Consulting", "industry_reason": "HR outsourcing and professional employer organization services."}, {"first": "Julien", "last": "Mira", "email": "jmira@newrelic.com", "company": "New Relic", "title": "Globalization Program Manager", "dept": "", "country": "United States", "score": 235, "seniority": "Manager", "industry": "Technology", "industry_reason": "Cloud-based observability and analytics SaaS platform."}, {"first": "Jake", "last": "Schostag", "email": "jschostag@arcticcat.com", "company": "Arctic Cat", "title": "Director, Global Trade Compliance", "dept": "", "country": "United States", "score": 195, "seniority": "Staff", "industry": "Manufacturing", "industry_reason": "Manufactures snowmobiles, ATVs, and off-road vehicles."}, {"first": "Elaine", "last": "Benoit", "email": "ebenoit@precisionbiologic.com", "company": "Precision Biologic Inc.", "title": "Marketing & Communications Manager", "dept": "", "country": "Canada", "score": 136, "seniority": "Manager", "industry": "Biotechnology", "industry_reason": "Develops specialty plasma-based biological products for diagnostics."}, {"first": "Patricia", "last": "Font", "email": "p.mendez@hotelbeds.com", "company": "HBX Group", "title": "Global Marketing Director Luxury & Retail", "dept": "", "country": "United States", "score": 135, "seniority": "Staff", "industry": "Hospitality", "industry_reason": "Global B2B travel solutions and technology company."}, {"first": "Michelle", "last": "Dalton", "email": "michelle.dalton@auroraparts.com", "company": "Aurora Parts", "title": "Senior Vice President of Marketing", "dept": "", "country": "United States", "score": 85, "seniority": "VP", "industry": "Manufacturing", "industry_reason": "Supplies aftermarket automotive parts across North America."}, {"first": "Chris", "last": "Brown", "email": "christopher_brown@yamaha-motor.com", "company": "Skeeter Products, Inc.", "title": "Brand Marketing Manager", "dept": "", "country": "United States", "score": 84, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Manufactures fishing boats and recreational watercraft."}, {"first": "Elizabeth", "last": "Krewson-Ross, MBA", "email": "liz.krewson-ross@theddcgroup.com", "company": "The DDC Group", "title": "Global Head of Marketing, Shipping, Logistics, & Travel", "dept": "", "country": "United States", "score": 83, "seniority": "Director", "industry": "Consulting", "industry_reason": "BPO company providing outsourced business process services globally."}, {"first": "Cindy", "last": "Collins", "email": "cindy.collins@capdrill.com", "company": "Capital Limited", "title": "Vice President of Growth, Americas", "dept": "", "country": "Canada", "score": 79, "seniority": "VP", "industry": "Finance", "industry_reason": "Mining-focused financial services and corporate advisory company."}, {"first": "David", "last": "Andrews", "email": "marketing@sullair.com", "company": "Hitachi Global Air Power", "title": "Vice President, Global Marketing and Communications", "dept": "", "country": "United States", "score": 72, "seniority": "VP", "industry": "Manufacturing", "industry_reason": "Manufactures industrial air compressors and related equipment."}, {"first": "Manpreet", "last": "Badyal", "email": "manpreet.badyal@toronto.msf.org", "company": "Doctors Without Borders/M\u00e9decins Sans Fronti\u00e8res (MSF) Canada", "title": "Digital Engagement Manager", "dept": "", "country": "Canada", "score": 72, "seniority": "Manager", "industry": "Not For Profit", "industry_reason": "International humanitarian medical NGO operating globally."}, {"first": "Jennifer", "last": "Tsai, Esq.", "email": "jct22@cornell.edu", "company": "DeepJudge", "title": "Content Marketing Manager", "dept": "", "country": "Canada", "score": 60, "seniority": "Manager", "industry": "Technology", "industry_reason": "Legal AI company providing search and knowledge management tools for law firms."}, {"first": "Janet", "last": "Grondin", "email": "marketing@sowatool.com", "company": "Sowa Tool & Machine Co. Ltd.", "title": "Marketing and Communications Manager", "dept": "", "country": "Canada", "score": 60, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Canadian manufacturer and distributor of cutting tools and precision instruments."}, {"first": "Lauren", "last": "G. Bennett, MBA", "email": "lbenne15@jhmi.edu", "company": "Johns Hopkins Medicine International", "title": "Assistant Director, Global Marketing & Strategy", "dept": "", "country": "United States", "score": 60, "seniority": "Staff", "industry": "Healthcare", "industry_reason": "Manages global partnerships and patient care programs for Johns Hopkins."}, {"first": "Roshan", "last": "Teeluck", "email": "roshan.teeluck@sap.com", "company": "SAP", "title": "Global Partner marketing manager", "dept": "", "country": "Canada", "score": 59, "seniority": "Manager", "industry": "Technology", "industry_reason": "Global enterprise software company providing ERP, CRM, and business applications."}, {"first": "Ravi", "last": "Shekher", "email": "ravi.shekher@midea.com", "company": "Midea America Canada Corp", "title": "Head of Digital and Brand Marketing", "dept": "", "country": "Canada", "score": 59, "seniority": "Director", "industry": "Manufacturing", "industry_reason": "Global home appliance manufacturer \u2014 North American operations."}, {"first": "Shawn", "last": "Hulshof", "email": "shawn.hulshof@eurofase.com", "company": "Eurofase", "title": "Vice President, Marketing", "dept": "", "country": "Canada", "score": 55, "seniority": "VP", "industry": "Manufacturing", "industry_reason": "Canadian manufacturer and distributor of decorative lighting fixtures."}, {"first": "Kim", "last": "Marin", "email": "kmarin@vvgtruck.ca", "company": "Velocity Vehicle Group", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 55, "seniority": "Manager", "industry": "Transportation", "industry_reason": "Large commercial truck and vehicle dealership group in North America."}, {"first": "Jean-Guy Carri\u00e8re", "last": "\- Chartered Financial Planner\u00ae", "email": "jean.carriere@scotiabank.com", "company": "Scotiabank", "title": "Assistant Manager", "dept": "", "country": "Canada", "score": 51, "seniority": "Staff", "industry": "Banking", "industry_reason": "One of Canada Big Five banks with extensive bilingual operations in Quebec."}, {"first": "Dan", "last": "Bennett", "email": "dan.bennett@metron-us.com", "company": "Metron", "title": "Senior Marketing Manager", "dept": "", "country": "United States", "score": 50, "seniority": "Manager", "industry": "Utilities", "industry_reason": "Provides smart metering and energy management technology for utilities."}, {"first": "Lauren", "last": "Jochum", "email": "lauren.jochum@greenblue.com", "company": "GreenBlue Urban", "title": "Head of Marketing, United States and Canada", "dept": "", "country": "United States", "score": 49, "seniority": "Director", "industry": "Environmental", "industry_reason": "Designs and manufactures urban tree planting and sustainable street infrastructure."}, {"first": "Georges", "last": "Ghazal", "email": "g.ghazal@eibrands.com", "company": "EI Brand Management Group", "title": "Digital Marketing Manager", "dept": "", "country": "Canada", "score": 48, "seniority": "Manager", "industry": "Retail", "industry_reason": "Manages luxury and premium consumer brands in the Canadian market."}, {"first": "David", "last": "Burnes", "email": "david.burnes@raymondjames.ca", "company": "Raymond James Ltd.", "title": "Head of Strategy and Business Development, Raymond James Correspondent Services", "dept": "", "country": "Canada", "score": 48, "seniority": "Director", "industry": "Finance", "industry_reason": "Canadian subsidiary of Raymond James Financial, an investment banking firm."}, {"first": "Marcia", "last": "Francis,  CPA, CGA, CFE, CAMS-Audit", "email": "mfrancis4@cogeco.ca", "company": "TNS Solutions Canada, part of NRT Technology Corp", "title": "VP, Fraud & Payment Compliance", "dept": "", "country": "Canada", "score": 48, "seniority": "VP", "industry": "Finance", "industry_reason": "Cash automation and payment technology for casinos and financial institutions."}, {"first": "Mark", "last": "Stephens", "email": "mark.stephens@kbra.com", "company": "KBRA", "title": "Director", "dept": "Compliance", "country": "United States", "score": 45, "seniority": "Staff", "industry": "Finance", "industry_reason": "Independent credit rating agency providing ratings for financial instruments."}, {"first": "Roland", "last": "Mueller", "email": "roland.mueller@qudatacentres.com", "company": "Qu Data Centres", "title": "Compliance Officer", "dept": "", "country": "Canada", "score": 45, "seniority": "C-level", "industry": "Technology", "industry_reason": "Operates enterprise data center facilities across Canada."}, {"first": "Kimberly", "last": "Botbyl", "email": "kimberly.botbyl@pets-global.com", "company": "Pets Global Inc.", "title": "Marketing Manager", "dept": "", "country": "United States", "score": 45, "seniority": "Manager", "industry": "Retail", "industry_reason": "Manufactures and distributes premium pet food brands including Zignature."}, {"first": "Julie", "last": "Trottier", "email": "Jtrottier@pipcanada.ca", "company": "PIP Global Safety", "title": "Director, Customer & Regional Marketing, Americas", "dept": "", "country": "Canada", "score": 41, "seniority": "Staff", "industry": "Manufacturing", "industry_reason": "Manufactures and distributes personal protective equipment (PPE)."}, {"first": "Jamie", "last": "Hornberger", "email": "jhornberger@zensai.com", "company": "Zensai", "title": "Director of Marketing Operations", "dept": "", "country": "United States", "score": 41, "seniority": "Staff", "industry": "Technology", "industry_reason": "AI-powered learning and performance management SaaS platform."}, {"first": "Mike", "last": "Di Savino", "email": "mike.disavino@alcon.com", "company": "Alcon", "title": "Trade Marketing and National Key Account Manager", "dept": "", "country": "Canada", "score": 41, "seniority": "Staff", "industry": "Healthcare", "industry_reason": "Global leader in eye care products including surgical equipment and contact lenses."}, {"first": "Karina", "last": "Dandavino", "email": "kdandavino@opto.com", "company": "OSI GROUP - GROUPE SOI", "title": "Marketing Director", "dept": "", "country": "Canada", "score": 41, "seniority": "Staff", "industry": "Food & Beverage", "industry_reason": "Global food processing company supplying proteins to major restaurant chains."}, {"first": "Praveen", "last": "Victor", "email": "praveen@jackhealth.ca", "company": "Wedbush", "title": "Head of Growth (Consumer)", "dept": "", "country": "Canada", "score": 40, "seniority": "Director", "industry": "Finance", "industry_reason": "US-based investment bank and financial services firm."}, {"first": "Jeff", "last": "Peterson", "email": "jpeterson@gocold.ca", "company": "GoCold Solutions", "title": "VP Sales and Marketing", "dept": "", "country": "Canada", "score": 40, "seniority": "VP", "industry": "Technology", "industry_reason": "Provides cold chain technology and logistics solutions."}, {"first": "Marty", "last": "Davis", "email": "martin.davis@elpro.com", "company": "ELPRO Global", "title": "Strategic Marketing Manager", "dept": "", "country": "United States", "score": 40, "seniority": "Manager", "industry": "Technology", "industry_reason": "Monitoring solutions for temperature-sensitive pharmaceutical products."}, {"first": "Victoria", "last": "Narciso", "email": "vnarciso@worldsourcewealth.com", "company": "Worldsource Wealth Management", "title": "Marketing Director", "dept": "", "country": "Canada", "score": 40, "seniority": "Staff", "industry": "Finance", "industry_reason": "Canadian independent investment dealer and financial planning firm."}, {"first": "Seth", "last": "DePenning", "email": "sdepenning@nuaire.com", "company": "NuAire", "title": "Marketing Manager", "dept": "", "country": "United States", "score": 40, "seniority": "Manager", "industry": "Biotechnology", "industry_reason": "Manufactures biological safety cabinets and laboratory equipment."}, {"first": "Don", "last": "Kennedy", "email": "don.kennedy@dimplexthermal.com", "company": "Dimplex Thermal Solutions", "title": "Digital Marketing Manager", "dept": "Product Development", "country": "United States", "score": 39, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Manufactures thermal management products including chillers and heat exchangers."}, {"first": "Cindy", "last": "Cannon", "email": "cindyc@mymts.net", "company": "Thompson Dorfman Sweatman LLP", "title": "Manager, Marketing and Business Development ", "dept": "", "country": "Canada", "score": 39, "seniority": "Manager", "industry": "Consulting", "industry_reason": "Leading Canadian law firm based in Manitoba."}, {"first": "Megan", "last": "Kleckner", "email": "mkleckner@andonline.com", "company": "A&D Engineering, Inc", "title": "Marketing", "dept": "Marketing", "country": "United States", "score": 38, "seniority": "Staff", "industry": "Electronics", "industry_reason": "Manufactures precision scales, balances, and measurement instruments."}, {"first": "Gerry", "last": "Wight", "email": "gerryw@archipelago.ca", "company": "Archipelago", "title": "Sales Marketing Manager", "dept": "", "country": "Canada", "score": 38, "seniority": "Manager", "industry": "Technology", "industry_reason": "AI risk analytics platform for maritime and industrial assets."}, {"first": "Bernardo", "last": "Zermeno", "email": "bernardo.zermeno@rexfab.com", "company": "Rexfab Inc.", "title": "Brand & Business Development", "dept": "", "country": "Canada", "score": 38, "seniority": "Staff", "industry": "Manufacturing", "industry_reason": "Designs and manufactures industrial bakery and food processing equipment."}, {"first": "Christine", "last": "Marinho", "email": "christine.marinho@adecco.ca", "company": "Adecco", "title": "Vice President of Marketing | Driving Recruitment Results through Strategic Marketing Expertise", "dept": "", "country": "Canada", "score": 38, "seniority": "VP", "industry": "Consulting", "industry_reason": "Global workforce solutions and staffing company operating across 60 countries."}, {"first": "Kathryn", "last": "Glushefski Canning", "email": "kathryn.canning@padillaco.com", "company": "Padilla", "title": "Senior Director, Digital Strategy", "dept": "", "country": "United States", "score": 37, "seniority": "Staff", "industry": "Communications", "industry_reason": "Integrated communications and PR agency serving mid-to-large enterprises."}, {"first": "Gillian", "last": "Matthew", "email": "gillian.matthew@arauco.com", "company": "Arauco North America", "title": "Manager, Media/Entertainment & Communications", "dept": "", "country": "Canada", "score": 37, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Wood panel and forestry products manufacturer with large Canadian operations."}, {"first": "Camil", "last": "Tang Turcotte", "email": "camil.tang-turcotte@publicisgroupe.net", "company": "Publicis Media", "title": "Group Director, Social & Search", "dept": "", "country": "Canada", "score": 37, "seniority": "Staff", "industry": "Media", "industry_reason": "Global media and communications agency network."}, {"first": "Diana", "last": "Kelly", "email": "dkelly@oxfordproperties.com", "company": "Oxford Properties", "title": "Marketing Associate Director, Brand", "dept": "", "country": "Canada", "score": 37, "seniority": "Staff", "industry": "Finance", "industry_reason": "Global real estate investor and developer with major Canadian holdings."}, {"first": "Jonathan", "last": "Viens", "email": "jonathan.viens@osgoodindustries.com", "company": "Osgood Industries, LLC", "title": "Vice President, Sales & Marketing", "dept": "", "country": "United States", "score": 37, "seniority": "VP", "industry": "Manufacturing", "industry_reason": "Manufactures filling and packaging equipment for food and beverage companies."}, {"first": "Jordan", "last": "Howie", "email": "Jordan.h@mcdauction.com", "company": "McDougall Auctioneers", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 36, "seniority": "Manager", "industry": "Retail", "industry_reason": "One of Canadas largest auction and real estate companies."}, {"first": "Erika", "last": "Newman", "email": "erika_newman@selinc.com", "company": "Schweitzer Engineering Laboratories (SEL)", "title": "Global Marketing Manager", "dept": "", "country": "United States", "score": 36, "seniority": "Manager", "industry": "Engineering", "industry_reason": "Manufactures power system protection and automation equipment for electric utilities."}, {"first": "MacKenna", "last": "Benecke", "email": "mackenna.benecke@kelownachrysler.com", "company": "Kelowna Chrysler Jeep Dodge Ram", "title": "Marketing Director", "dept": "", "country": "Canada", "score": 36, "seniority": "Staff", "industry": "Retail", "industry_reason": "Automotive dealership in Kelowna, British Columbia."}, {"first": "S\u00e9bastien", "last": "Beetz", "email": "Sebastien.beetz@payworks.ca", "company": "Payworks Canada (Services de traitement de paie)", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 36, "seniority": "Manager", "industry": "Technology", "industry_reason": "Cloud-based payroll, HR, and workforce management software across Canada."}, {"first": "Arelis", "last": "Romero", "email": "aromero@broniec.com", "company": "Broniec Associates, Inc.", "title": "Marketing Manager", "dept": "", "country": "United States", "score": 36, "seniority": "Manager", "industry": "Consulting", "industry_reason": "Professional services and consulting firm."}, {"first": "Marie", "last": "Lo", "email": "marie.lo@rtx.com", "company": "RTX", "title": "Sr. Global Employer Brand Marketing Manager", "dept": "", "country": "United States", "score": 36, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Aerospace and defense manufacturer (formerly Raytheon Technologies)."}, {"first": "Stacey", "last": "Hirvela", "email": "stacey@springmeadownursery.com", "company": "Spring Meadow Nursery/Proven Winners Color Choice Shrubs", "title": "Marketing Manager", "dept": "", "country": "United States", "score": 36, "seniority": "Manager", "industry": "Agriculture", "industry_reason": "Leading ornamental plant breeder and marketer distributing across North America."}, {"first": "Jane", "last": "White, RGD", "email": "jane@ptpackaging.com", "company": "Printex Transparent Packaging ", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 36, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Manufactures transparent and specialty packaging solutions."}, {"first": "Stephanie", "last": "Hammer", "email": "stephanie.hammer@resideo.com", "company": "Resideo", "title": "Consumer Marketing Manager", "dept": "", "country": "United States", "score": 36, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Global manufacturer of smart home and building technology products."}, {"first": "Alanah", "last": "Jones", "email": "alanahj@aokaycreative.ca", "company": "Noble Motives Collective DBA Caposhie", "title": "Head of Product & Assortment Strategy", "dept": "", "country": "Canada", "score": 35, "seniority": "Director", "industry": "Retail", "industry_reason": "Canadian consumer goods and retail brand company."}, {"first": "Anthony", "last": "Assefa", "email": "anthony@gsecanada.ca", "company": "ISN Canada Group Inc.", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Consulting", "industry_reason": "Contractor and supplier information management and risk management services."}, {"first": "Ester", "last": "Mora", "email": "emora@worldanimalprotection.org", "company": "World Animal Protection Canada / Protection mondiale des animaux", "title": "Marketing Manager", "dept": "", "country": "Costa Rica", "score": 35, "seniority": "Manager", "industry": "Not For Profit", "industry_reason": "International NGO working to improve animal welfare globally."}, {"first": "Steve", "last": "Dalby", "email": "steve.dalby@wellons.ca", "company": "Wellons ", "title": "Head of Marketing", "dept": "", "country": "Canada", "score": 35, "seniority": "Director", "industry": "Manufacturing", "industry_reason": "Manufactures biomass boiler systems and industrial heating equipment."}, {"first": "Darin", "last": "Bartik", "email": "darin.bartik@akka.io", "company": "Akka", "title": "Chief Marketing Officer", "dept": "", "country": "United States", "score": 35, "seniority": "C-level", "industry": "Engineering", "industry_reason": "Engineering and technology consulting for automotive, aerospace, and rail."}, {"first": "Michael", "last": "Harley", "email": "mike.harley@nvtgroup.com", "company": "The NVT Group", "title": "Marketing Communications Creative Director at NVT Group", "dept": "", "country": "United States", "score": 35, "seniority": "Staff", "industry": "Technology", "industry_reason": "Network infrastructure and energy solutions including cable and power distribution."}, {"first": "Sharon", "last": "Norris", "email": "sharon.norris@hfsinclair.com", "company": "HF Sinclair", "title": "Global Segment Marketing Manager - Mining, Agriculture & Industrial Greases", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Energy", "industry_reason": "Diversified energy company producing lubricants, refined products, and renewable fuels."}, {"first": "Thirumahal", "last": "S, Ph.D.", "email": "Thirumahal.selvanantham@cellsignal.com", "company": "Cell Signaling Technology (CST)", "title": "Product Marketing Manager Immunology", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Biotechnology", "industry_reason": "Manufactures antibodies and research reagents for life sciences research."}, {"first": "Deb", "last": "Andrychuk", "email": "deb@joveo.com", "company": "Joveo", "title": "Head of Marketing", "dept": "", "country": "United States", "score": 35, "seniority": "Director", "industry": "Technology", "industry_reason": "Programmatic job advertising and recruitment technology platform."}, {"first": "Melissa", "last": "McNeil", "email": "Melissam@bepressure.com", "company": "BE Power Equipment", "title": "National Sales and Marketing Manager", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Manufactures and distributes generators, pressure washers, and outdoor power equipment."}, {"first": "Melisa", "last": "Valverde, CHE", "email": "melisa.valverde@easternhealth.ca", "company": "NL Health Services", "title": "Senior Director, Provincial Digital Strategy", "dept": "", "country": "Canada", "score": 35, "seniority": "Staff", "industry": "Healthcare", "industry_reason": "Provincial health authority for Newfoundland and Labrador, Canada."}, {"first": "Alex", "last": "Stojkovic", "email": "alex.stojkovic@cropac.com", "company": "Cropac Equipment Inc.", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Canadian distributor of agricultural and food processing equipment."}, {"first": "Martin", "last": "Fuchs", "email": "Martin.Fuchs@rustoleum.ca", "company": "Rust-Oleum Canada", "title": "Senior Brand Manager", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Manufacturing", "industry_reason": "Canadian division of Rust-Oleum, a leading paint and coatings manufacturer."}, {"first": "Stephen", "last": "Balla", "email": "sballa@moog.com", "company": "Moog", "title": "Digital Marketing Specialist", "dept": "", "country": "", "score": 35, "seniority": "Staff", "industry": "Manufacturing", "industry_reason": "Manufactures precision motion control equipment for aerospace, defense, and industrial."}, {"first": "Rod", "last": "Leland", "email": "rleland@comtruck.ca", "company": "Commercial Truck Equipment Co.", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Transportation", "industry_reason": "Distributes and installs truck equipment, upfitting, and accessories."}, {"first": "Krystel", "last": "Beaulieu", "email": "kbeaulieu@prosci.com", "company": "Prosci", "title": "Client Solutions Manager", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Consulting", "industry_reason": "Global change management research and advisory company."}, {"first": "Philippe", "last": "Beaumier", "email": "p.beaumier@mecanhydro.com", "company": "Mecan-Hydro", "title": "Directeur marketing", "dept": "", "country": "Canada", "score": 35, "seniority": "Staff", "industry": "Manufacturing", "industry_reason": "Quebec-based manufacturer of hydraulic and pneumatic components."}, {"first": "Keith", "last": "MacKenzie", "email": "keith@keithmackenzie.com", "company": "CloudZero", "title": "Content Marketing Manager", "dept": "", "country": "United States", "score": 35, "seniority": "Manager", "industry": "Technology", "industry_reason": "Cloud cost intelligence and FinOps SaaS platform for engineering and finance teams."}, {"first": "Nerissa", "last": "Flores", "email": "nflores@ewtn.com", "company": "EWTN", "title": "Regional Marketing Manager for Canada", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Media", "industry_reason": "Global Catholic media network broadcasting in multiple languages."}, {"first": "Harshal", "last": "Dalal", "email": "harshal.dalal@gowlingwlg.com", "company": "Gowling WLG", "title": "Director, BD & Marketing Operations", "dept": "", "country": "Canada", "score": 35, "seniority": "Staff", "industry": "Consulting", "industry_reason": "Major international law firm with significant operations in Canada."}, {"first": "Mark", "last": "Gimson", "email": "mgimson@cla-val.com", "company": "Cla-Val", "title": "Director, Marketing & International Sales", "dept": "", "country": "Canada", "score": 35, "seniority": "Staff", "industry": "Manufacturing", "industry_reason": "Manufactures automatic control valves for water, aviation fuel, and fire protection."}, {"first": "Beth", "last": "Roncke", "email": "Eroncke@michels.us", "company": "Michels Corporation", "title": "Brand Manager", "dept": "", "country": "United States", "score": 35, "seniority": "Manager", "industry": "Construction", "industry_reason": "Major infrastructure construction company specializing in pipeline, power, and telecom."}, {"first": "Adnan", "last": "Ashraf", "email": "adnan@wonderflow.ai", "company": "Wonderflow", "title": "Head of Marketing", "dept": "", "country": "Canada", "score": 35, "seniority": "Director", "industry": "Technology", "industry_reason": "AI-powered consumer feedback analytics platform for product and CX teams."}, {"first": "Rob", "last": "Gordon P. Eng., MBA., HFGC.", "email": "r.gordon@cogeco.ca", "company": "Quantec Geoscience Ltd.", "title": "Manager of Sales and Marketing ", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Energy", "industry_reason": "Provides geophysical survey services for mining and oil and gas exploration."}, {"first": "Peter", "last": "Kalavrias", "email": "peterk@namco.ca", "company": "NAMCO Machine & Gear Works Ltd.", "title": "Vice President Sales & Marketing", "dept": "", "country": "Canada", "score": 35, "seniority": "VP", "industry": "Manufacturing", "industry_reason": "Canadian manufacturer of precision gears and custom machined components."}, {"first": "Iris", "last": "Zhang", "email": "iris.zhang@virgocx.ca", "company": "VirgoCX", "title": "Legal Specialist", "dept": "", "country": "Canada", "score": 35, "seniority": "Staff", "industry": "Finance", "industry_reason": "Canadian cryptocurrency exchange and digital asset trading platform."}, {"first": "Maya", "last": "Crocker, MBA", "email": "maya.crocker@kalosys.net", "company": "Kalosys", "title": "Marketing Manager", "dept": "", "country": "United States", "score": 35, "seniority": "Manager", "industry": "Technology", "industry_reason": "Canadian SaaS company providing field service and workforce management software."}, {"first": "vernie", "last": "matue", "email": "Payroll@securitedg.ca", "company": "CXG", "title": "Luxury Brand Evaluator", "dept": "", "country": "Canada", "score": 35, "seniority": "Staff", "industry": "Consulting", "industry_reason": "Global customer experience consulting firm specializing in luxury and premium brands."}, {"first": "Kyla", "last": "Werrett, CM, DTM", "email": "kyla.werrett@acamericas.net", "company": "A.C. Americas", "title": "Marketing Manager", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Retail", "industry_reason": "Distributes and manages consumer brands across North American retail markets."}, {"first": "Johanne", "last": "Albert-Cardinal", "email": "jalbert@cantley.ca", "company": "Municipalit\u00e9 de Cantley", "title": "Manager, Marketing & Communications (Responsable, Communication et marketing)", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Government", "industry_reason": "Municipality in Quebec directly subject to Bill 96."}, {"first": "Zoya", "last": "Islam", "email": "Zoya.Islam@torontomu.ca", "company": "Toronto Metropolitan University", "title": "Manager, Marketing and Communications", "dept": "", "country": "Canada", "score": 35, "seniority": "Manager", "industry": "Education", "industry_reason": "Major public university in Toronto, Ontario."}];
+
+// Add id to each lead
+LEADS.forEach((l,i) => l.id = i);
+
+const COHORT = {
+  0: "HOT LEAD — filled out contact form. HR company in Canada — Bill 96 directly impacts employee comms and HR materials in Quebec. GlobalLink Web + TMS fit.",
+  1: "Top priority (235). Globalization Program Manager = direct champion persona. SaaS expanding into Quebec. TMS + Strings ideal.",
+  2: "Strong candidate (195). Director-level. US manufacturer selling into Canada — product documentation translation for Quebec compliance. TMS fit.",
+  3: "Cohort candidate (136). Life Sci company in Canada — Bill 96 impacts regulated marketing and patient-facing content. TMS + Web fit.",
+  4: "Cohort candidate (135). Global Marketing Director at a travel tech company — Quebec tourism market. GlobalLink Web + TMS fit.",
+  5: "Warm lead (85). SVP-level economic buyer at a Canadian auto parts company. Product catalog bilingualization for Quebec. TMS + Portal fit.",
+  6: "Warm lead (84). US manufacturer selling into Canada — Quebec market entry for product and brand content. GlobalLink Web fit.",
+  7: "Warm lead (83). Global head of marketing at a BPO — client-facing operations in Quebec. TMS + Portal fit.",
+  8: "Warm lead (79). VP-level economic buyer in financial services in Canada. Regulatory and investor materials for Quebec. TMS fit.",
+  9: "Warm lead (72). VP Global Marketing at an industrial manufacturer. Product documentation and marketing for Canadian bilingual market. TMS + Web fit.",
+  10: "Warm lead (72). Canadian NGO with strong bilingual requirements for donor and public communications in Quebec. GlobalLink Web fit.",
+};
+
+const FILTERS = { tier:'all', ind:'all', sen:'all', cty:'all' };
+let VIEW = 'cards';
+
+function tier(s,first,last){ if(first==='Megan' && last==='Purdy') return 'hot'; if(s>=75) return 'warm'; return 'cold'; }
+function scls(s,f,l){ const t=tier(s,f,l); return t==='hot'?'sh':t==='warm'?'sw':'sc'; }
+function tlabel(s,f,l){ const t=tier(s,f,l); return t==='hot'?'🔴 Hot':t==='warm'?'🟡 Warm':'⚪ Cold'; }
+function tclass(s,f,l){ const t=tier(s,f,l); return t==='hot'?'th':t==='warm'?'tw':'tco'; }
+
+function buildIndustryFilters(){
+  const inds = [...new Set(LEADS.map(l=>l.industry))].sort();
+  const el = document.getElementById('ind-filters');
+  el.innerHTML = `<button class="fb active" data-f="ind" data-v="all" onclick="setFilter('ind','all',this)">All <span class="cnt">${LEADS.length}</span></button>` +
+    inds.map(ind => {
+      const cnt = LEADS.filter(l=>l.industry===ind).length;
+      const safe = ind.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<button class="fb" data-f="ind" data-v="${ind}" onclick="setFilter('ind','${safe}',this)">${ind} <span class="cnt">${cnt}</span></button>`;
+    }).join('');
+}
+
+function filtered(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  return LEADS.filter(l => {
+    if(FILTERS.tier!=='all' && tier(l.score,l.first,l.last)!==FILTERS.tier) return false;
+    if(FILTERS.ind!=='all' && l.industry!==FILTERS.ind) return false;
+    if(FILTERS.sen!=='all' && l.seniority!==FILTERS.sen) return false;
+    if(FILTERS.cty!=='all'){
+      if(FILTERS.cty==='Other'){ if(l.country==='Canada'||l.country==='United States') return false; }
+      else if(l.country!==FILTERS.cty) return false;
+    }
+    if(q){
+      const b=[l.first,l.last,l.company,l.title,l.industry,l.seniority].join(' ').toLowerCase();
+      if(!b.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function setFilter(type,val,btn){
+  FILTERS[type]=val;
+  document.querySelectorAll(`[data-f="${type}"]`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function resetFilters(){
+  Object.keys(FILTERS).forEach(k=>FILTERS[k]='all');
+  document.getElementById('searchInput').value='';
+  document.querySelectorAll('.fb').forEach(b=>b.classList.toggle('active',b.dataset.v==='all'));
+  render();
+}
+
+function render(){
+  const data = filtered();
+  document.getElementById('rc').textContent = data.length;
+  if(VIEW==='cards') renderCards(data);
+  else renderTable(data);
+}
+
+function flag(c){ return c==='Canada'?'🇨🇦':c==='United States'?'🇺🇸':'🌎'; }
+
+function renderCards(data){
+  const g = document.getElementById('cardGrid');
+  if(!data.length){ g.innerHTML='<div class="empty"><p style="font-size:24px;margin-bottom:8px">🔍</p><p>No leads match your filters.</p></div>'; return; }
+  g.innerHTML = data.map(l=>`
+    <div class="card" onclick="showDetail(${l.id})">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${l.first} ${l.last}</div>
+          <div class="card-company">${l.company}</div>
+        </div>
+        <div class="sb ${scls(l.score,l.first,l.last)}">${l.score}</div>
+      </div>
+      <div class="card-title">${l.title}</div>
+      <div class="card-tags">
+        <span class="tag ti">${l.industry}</span>
+        <span class="tag ts">${l.seniority}</span>
+        <span class="tag tc">${flag(l.country)} ${l.country||'Unknown'}</span>
+      </div>
+      <div class="card-footer">
+        <span style="font-size:10px;color:var(--muted)">${l.dept||'—'}</span>
+        <span style="font-size:10px;font-weight:600" class="${tclass(l.score,l.first,l.last)}">${tlabel(l.score,l.first,l.last)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderTable(data){
+  const w = document.getElementById('tableWrap');
+  if(!data.length){ w.innerHTML='<div class="empty"><p>No leads match your filters.</p></div>'; return; }
+  w.innerHTML = `<table><thead><tr><th>Name</th><th>Company</th><th>Job Title</th><th>Industry</th><th>Score</th><th>Seniority</th><th>Country</th></tr></thead><tbody>` +
+    data.map(l=>`<tr onclick="showDetail(${l.id})">
+      <td>${l.first} ${l.last}</td>
+      <td>${l.company}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.title}</td>
+      <td><span class="tag ti" style="font-size:10px">${l.industry}</span></td>
+      <td><span class="sb ${scls(l.score,l.first,l.last)}" style="width:auto;height:auto;padding:3px 8px;border-radius:5px;font-size:11px">${l.score}</span></td>
+      <td>${l.seniority}</td>
+      <td>${flag(l.country)} ${l.country||'—'}</td>
+    </tr>`).join('') + '</tbody></table>';
+}
+
+function showDetail(id){
+  const l = LEADS[id];
+  document.getElementById('dp').classList.remove('hidden');
+  const t = tier(l.score,l.first,l.last);
+  const tc2 = t==='hot'?'th':t==='warm'?'tw':'tco';
+  const tl = t==='hot'?'Hot lead (form fill)':t==='warm'?'Warm lead (75+)':'Cold lead';
+  const cohort = COHORT[id] || (t==='hot'?'Strong cohort candidate. Enrich in AudienceAI to identify trigger type before adding to cohort program.':t==='warm'?'Warm lead — monitor score. Good candidate for cohort once threshold is reached.':'Cold lead — keep in Stage 1 vertical nurture until score improves.');
+  document.getElementById('di').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div><div class="dn">${l.first} ${l.last}</div><div class="dt">${l.title}<br><strong>${l.company}</strong></div></div>
+      <button class="cb" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="dsr">
+      <div class="dsb ${scls(l.score,l.first,l.last)}">${l.score}</div>
+      <div class="dst"><div class="dsl">Pardot Score</div><div class="dss ${tc2}">${tl}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${l.seniority} level</div></div>
+    </div>
+    <div class="crec"><div class="crect">Cohort recommendation</div><div class="crecv">${cohort}</div></div>
+    <div class="ds">
+      <div class="dst2">Lead details</div>
+      <div class="dr"><span class="dl">Department</span><span class="dv">${l.dept||'—'}</span></div>
+      <div class="dr"><span class="dl">Country</span><span class="dv">${flag(l.country)} ${l.country||'—'}</span></div>
+      <div class="dr"><span class="dl">Seniority</span><span class="dv">${l.seniority}</span></div>
+      <div class="dr"><span class="dl">Email</span><span class="dv" style="font-size:10px;word-break:break-all">${l.email}</span></div>
+    </div>
+    <div class="ds">
+      <div class="dst2">Industry (enriched)</div>
+      <div class="dr"><span class="dl">Industry</span><span class="dv"><span class="tag ti">${l.industry}</span></span></div>
+      <div class="dr"><span class="dl">Why</span><span class="dv" style="color:var(--muted);font-size:10px;font-weight:400">${l.industry_reason}</span></div>
+    </div>`;
+}
+
+function closeDetail(){
+  document.getElementById('dp').classList.add('hidden');
+}
+
+function setView(v){
+  VIEW=v;
+  document.getElementById('btnC').classList.toggle('active',v==='cards');
+  document.getElementById('btnT').classList.toggle('active',v==='table');
+  document.getElementById('cardGrid').style.display=v==='cards'?'grid':'none';
+  document.getElementById('tableWrap').style.display=v==='table'?'block':'none';
+  render();
+}
+
+buildIndustryFilters();
+render();
+</script>
+</body>
+</html>
